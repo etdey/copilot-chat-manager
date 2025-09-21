@@ -1,0 +1,15 @@
+#
+# Files for git to ignore
+#
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Python environments
+.venv*/
+
+# MacOS artifacts
+.DS_Store

@@ -1,0 +1,5 @@
+#
+# Python project dependencies
+#
+
+rich>=14,<15
