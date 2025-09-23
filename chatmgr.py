@@ -165,11 +165,11 @@ if __name__ == "__main__":
 
     # OS specific default workspace path
     def_workspace = None
-    if os.name == 'nt':  # Windows
+    if sys.platform == 'win32':
         def_workspace = os.path.join(Defaults['userHomeDir'], Defaults['workspaceDirRelWindows'])
-    elif os.name == 'darwin':  # macOS
+    elif sys.platform == 'darwin':
         def_workspace = os.path.join(Defaults['userHomeDir'], Defaults['workspaceDirRelMac'])
-    elif os.name == 'posix':  # Linux
+    elif sys.platform == 'linux':
         def_workspace = os.path.join(Defaults['userHomeDir'], Defaults['workspaceDirRelLinux'])
 
     description = 'GitHub Copilot chat manager tool.'
