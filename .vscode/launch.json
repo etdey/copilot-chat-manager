@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "type": "debugpy",
+            "request": "launch",
+            "name": "Debug chatmgr.py",
+            "program": "${workspaceFolder}/chatmgr.py",
+            "console": "integratedTerminal",
+            "args": [
+                "${input:cliArgs}"
+            ],
+            "env": {}
+        }
+    ],
+    "inputs": [
+        {
+            "id": "cliArgs",
+            "type": "promptString",
+            "description": "Enter command-line arguments for chatmgr.py",
+            "default": ""
+        }
+    ],
+}
