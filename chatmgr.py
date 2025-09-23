@@ -76,7 +76,7 @@ def load_workspaces(storageDir: str, sortBy: str = '') -> Workspace.Workspaces:
 
 def print_workspace_summary(workspaces: Workspace.Workspaces) -> None:
     """prints a summary of the workspaces and their chat sessions"""
-    md  = f'# Workspace Summary\n'
+    md  = f'# Available Workspaces\n'
     md += f'**Workspace storage:** {folder_url_format(workspaces.storageDir)}  \n'
     md += f'**Workspaces with chat sessions:** {len(workspaces)}\n\n'
     md += '| ID | Workspace Folder | Created | Last Updated | Chats |\n'
@@ -147,7 +147,6 @@ def mode_chat(options: argparse.Namespace) -> None:
     md += f'**Workspace ID:** {selected_workspace.id}  \n'
     md += f'**Chat ID:** {selected_chat.id}  \n'
     md += f'**Created:** {timestamp_format(selected_chat.createDate)}  \n'
-    md += f'**Last Updated:** {timestamp_format(selected_chat.lastUpdate)}  \n'
     md += f'**Requests:** {len(selected_chat)}\n\n'
     markdown_to_text(md, printText=True)
 
@@ -229,7 +228,7 @@ if __name__ == "__main__":
     options.log = logging.getLogger(me)
 
     # help command
-    if options.cmd[0] == 'help':
+    if options.cmd == 'help':
         parser.print_help()
         sys.exit(0)
 
@@ -253,20 +252,3 @@ if __name__ == "__main__":
 
 
     sys.exit(1)
-
-
-    """
-    # Load the chat session from the specified file
-    with open(options.session, 'r', encoding='utf-8') as f:
-        chat = Chat(f.read())
-
-
-    # Loop through each request and process message.text and response[0].value
-    for req, resp in chat:
-        # Process message.text as markdown
-        title = "## Request\n"
-        markdown_to_text(title + req, printText=True)
-        title = "## Copilot Response:\n"
-        markdown_to_text(title + resp, printText=True)
-        markdown_to_text('---\n', printText=True)
-    """
