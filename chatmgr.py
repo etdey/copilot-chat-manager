@@ -14,7 +14,6 @@ import argparse, datetime, logging, os, sys, urllib.parse
 from rich.console import Console
 from rich.markdown import Markdown
 
-import ChatSession
 import Workspace
 
 
@@ -86,14 +85,21 @@ def print_workspace_summary(workspaces: Workspace.Workspaces) -> None:
     markdown_to_text(md, printText=True)
 
 
+def print_sortkeys(workspace:bool = True, chat:bool = True) -> None:
+    """prints the available sort keys for workspaces and chats"""
+    if workspace:
+        print('Workspace sort keys:', end=' ')
+        print(', '.join(Workspace.Workspace.sorting_attributes()))
+    if chat:
+        print('Chat sort keys:', end=' ')
+        print(', '.join(Workspace.Chat.sorting_attributes()))
+
+
 def mode_global(options: argparse.Namespace) -> None:
     """handle global mode (no workspace or chat specified)"""
     
     if options.cmd == 'sortkeys':
-        print('Workspace sort keys:', end=' ')
-        print(', '.join(Workspace.Workspace.sorting_attributes()))
-        print('Chat sort keys:', end=' ')
-        print(', '.join(Workspace.Chat.sorting_attributes()))
+        print_sortkeys(workspace=True, chat=False)
         return
     
     if options.cmd == 'list' or options.cmd == 'view':
@@ -107,6 +113,10 @@ def mode_global(options: argparse.Namespace) -> None:
 
 def mode_workspace(options: argparse.Namespace) -> None:
     """handle workspace mode (workspace specified, no chat specified)"""
+
+    if options.cmd == 'sortkeys':
+        print_sortkeys(workspace=False, chat=True)
+        return
 
     workspaces = load_workspaces(options.workspaceStorageDir)
     selected_workspace = workspaces.find(options.workspace)
@@ -123,10 +133,10 @@ def mode_workspace(options: argparse.Namespace) -> None:
     md += f'**Created:** {timestamp_format(selected_workspace.createDate)}  \n'
     md += f'**Last Updated:** {timestamp_format(selected_workspace.lastUpdate)}  \n'
     md += f'**Chat Sessions:** {len(selected_workspace.chats)}\n\n'
-    md += '| Chat ID | Created | Requests |\n'
-    md += '|---------|---------|----------|\n'
+    md += '| Chat ID | Created | Requests | Size |\n'
+    md += '|---------|---------|----------|------|\n'
     for chat in selected_workspace.chats:
-        md += f'| {elipsis_id(chat.id or "")} | {timestamp_format(chat.createDate)} | {len(chat)} |\n'
+        md += f'| {elipsis_id(chat.id or "")} | {timestamp_format(chat.createDate)} | {len(chat)} | {chat.size} |\n'
     markdown_to_text(md, printText=True)
 
 
@@ -147,10 +157,11 @@ def mode_chat(options: argparse.Namespace) -> None:
     md += f'**Workspace ID:** {selected_workspace.id}  \n'
     md += f'**Chat ID:** {selected_chat.id}  \n'
     md += f'**Created:** {timestamp_format(selected_chat.createDate)}  \n'
+    md += f'**Size (chars):** {selected_chat.size}  \n'
     md += f'**Requests:** {len(selected_chat)}\n\n'
     markdown_to_text(md, printText=True)
 
-    for i, (req, resp) in enumerate(selected_chat):
+    for i, (req, resp, _) in enumerate(selected_chat):
         title = f"## Request {i+1}\n"
         markdown_to_text(title + req, printText=True, sanitize=not options.no_sanitize)
         title = f"## Copilot Response {i+1}:\n"

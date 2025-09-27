@@ -8,6 +8,7 @@ Copyright (c) 2025 by Eric Dey. All rights reserved.
 from __future__ import annotations  # for forward references in type hints
 
 import json, logging, os
+from typing import Iterator
 
 from ChatSession import Chat
 
@@ -90,7 +91,7 @@ class Workspaces:
         return len(self.workspaces)
     
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Workspace]:
         for w in self.workspaces:
             yield w
 
@@ -119,7 +120,7 @@ class Workspace:
         self._sortReverse = False  # sort descending if attribute name starts with '-'
         self.createDate = os.path.getctime(storageDir)
         self.lastUpdate = self.createDate # default until we find chat sessions
-        self.chats = []  # chat objects
+        self.chats: list[Chat] = []  # chat objects
         self.folder = ''  # project directory this workspace is associated with
         self.id = os.path.basename(self.storageDir)  # id is the storageDir name
 
