@@ -19,17 +19,22 @@ class Request:
         self.request: str = ''
         self.response: str = ''
         self.size: int = 0  # size of the request + response strings
+        self.requestDict: dict = {}  # parsed request dictionary
+        self.rawRequest: str = ''  # original request JSON
+        self.rawResponse: str = ''  # original response JSON
         
         if isinstance(requestInput, str):
-            requestDict = json.loads(requestInput)
+            self.requestDict = json.loads(requestInput)
         elif isinstance(requestInput, dict):
-            requestDict = requestInput
+            self.requestDict = requestInput
         else:
             raise ValueError("requestInput must be a dict or JSON string")
 
-        self.request = requestDict.get('message', {}).get('text', '')
+        self.request = self.requestDict.get('message', {}).get('text', '')
+        self.rawRequest = json.dumps(self.request, indent=2)
 
-        responses = requestDict.get('response', [])
+        responses = self.requestDict.get('response', [])
+        self.rawResponse = json.dumps(responses, indent=2)
         if len(responses) == 0:
             Log.debug("no responses found for a request.")
             # self.responses.append('_No response_')

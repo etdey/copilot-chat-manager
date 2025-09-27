@@ -9,7 +9,7 @@ Created: September 2025
 
 """
 
-import argparse, datetime, logging, os, sys, urllib.parse
+import argparse, datetime, json, logging, os, sys, urllib.parse
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -24,7 +24,6 @@ Defaults = {
     'workspaceDirRelMac': os.path.join('Library', 'Application Support', 'Code', 'User', 'workspaceStorage'),
     'workspaceDirRelLinux': os.path.join('.config', 'Code', 'User', 'workspaceStorage'),
     'sanitizeMarkdown': True,
-    'inputEncoding': 'utf-8',
 }
 
 
@@ -161,6 +160,25 @@ def mode_chat(options: argparse.Namespace) -> None:
     md += f'**Requests:** {len(selected_chat)}\n\n'
     markdown_to_text(md, printText=True)
 
+    if options.raw:
+        for i, r in enumerate(selected_chat.requests):
+            title = f"## Request {i+1} (raw JSON input):\n"
+            quotedJson = '```\n' + r.rawRequest + '\n```\n'
+            markdown_to_text(title + quotedJson, printText=True, sanitize=not options.no_sanitize)
+            title = f"## Copilot Response {i+1} (raw JSON input):\n"
+            quotedJson = '```\n' + r.rawResponse + '\n```\n'
+            markdown_to_text(title + quotedJson, printText=True, sanitize=not options.no_sanitize)
+            markdown_to_text('---\n', printText=True)
+        return
+    
+    if options.raw_all:
+        for i, r in enumerate(selected_chat.requests):
+            title = f"## Request & Response {i+1} (raw JSON input):\n"
+            quotedJson = '```\n' + json.dumps(r.requestDict, indent=2) + '\n```\n'
+            markdown_to_text(title + quotedJson, printText=True, sanitize=not options.no_sanitize)
+            markdown_to_text('---\n', printText=True)
+        return
+
     for i, (req, resp, _) in enumerate(selected_chat):
         title = f"## Request {i+1}\n"
         markdown_to_text(title + req, printText=True, sanitize=not options.no_sanitize)
@@ -200,12 +218,13 @@ if __name__ == "__main__":
     # input options
     grp = parser.add_argument_group('Input options')
     grp.add_argument('--no-sanitize', action='store_true', help='do not sanitize markdown text')
-    grp.add_argument('--input-encoding', type=str, metavar='ENC', default=Defaults['inputEncoding'], help='input text encoding format (default: %(default)s)')
 
     # output options
     grp = parser.add_argument_group('Output options')
     grp.add_argument('--sort', '-s', type=str, metavar='NAME', default='', help='sort attribute')
     grp.add_argument('--reverse', '-r', action='store_true', help='reverse the sort order')
+    grp.add_argument('--raw', action='store_true', help='show raw JSON input for chat sessions')
+    grp.add_argument('--raw-all', action='store_true', help='show all raw JSON input for chat sessions')
 
     # filtering options
     grp = parser.add_argument_group('Filtering')
