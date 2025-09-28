@@ -9,7 +9,7 @@ Created: September 2025
 
 """
 
-import argparse, datetime, json, logging, os, sys, urllib.parse
+import argparse, datetime, json, logging, os, shlex, sys, urllib.parse
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -40,7 +40,7 @@ def sanitize_md_text(text: str) -> str:
     return text
 
 
-def markdown_to_text(markdown: str, printText: bool = False, sanitize: bool = False) -> None:
+def markdown_to_text(markdown: str, printText: bool = True, sanitize: bool = False) -> None:
     if sanitize:
         markdown = sanitize_md_text(markdown)
     md = Markdown(markdown)
@@ -103,7 +103,7 @@ def mode_global(options: argparse.Namespace) -> None:
     
     if options.cmd == 'list' or options.cmd == 'view':
         workspaces = load_workspaces(options.workspaceStorageDir, sortBy=options.sort)
-        print_workspace_summary(workspaces)
+        print_workspace_summary(workspaces) if options.printmd else None
         return
 
     options.log.error(f'invalid command: {options.cmd}')
@@ -123,6 +123,8 @@ def mode_workspace(options: argparse.Namespace) -> None:
         options.log.error(f'workspace not found: {options.workspace}')
         sys.exit(1)
 
+    printMarkdown = options.printmd
+
     # sorting for chat sessions
     selected_workspace.sort(sortBy=options.sort)
 
@@ -136,7 +138,7 @@ def mode_workspace(options: argparse.Namespace) -> None:
     md += '|---------|---------|----------|------|\n'
     for chat in selected_workspace.chats:
         md += f'| {elipsis_id(chat.id or "")} | {timestamp_format(chat.createDate)} | {len(chat)} | {chat.size} |\n'
-    markdown_to_text(md, printText=True)
+    markdown_to_text(md, printText=printMarkdown)
 
 
 def mode_chat(options: argparse.Namespace) -> None:
@@ -152,39 +154,42 @@ def mode_chat(options: argparse.Namespace) -> None:
         options.log.error(f'chat session not found in workspace {options.workspace}: {options.chat}')
         return
 
+    printMarkdown = options.printmd
+    sanitizeText = options.sanitize
+
     md  = f'# Chat Session Details\n'
     md += f'**Workspace ID:** {selected_workspace.id}  \n'
     md += f'**Chat ID:** {selected_chat.id}  \n'
     md += f'**Created:** {timestamp_format(selected_chat.createDate)}  \n'
     md += f'**Size (chars):** {selected_chat.size}  \n'
     md += f'**Requests:** {len(selected_chat)}\n\n'
-    markdown_to_text(md, printText=True)
+    markdown_to_text(md, printText=printMarkdown)
 
     if options.raw:
         for i, r in enumerate(selected_chat.requests):
             title = f"## Request {i+1} (raw JSON input):\n"
             quotedJson = '```\n' + r.rawRequest + '\n```\n'
-            markdown_to_text(title + quotedJson, printText=True, sanitize=not options.no_sanitize)
+            markdown_to_text(title + quotedJson, printText=printMarkdown, sanitize=sanitizeText)
             title = f"## Copilot Response {i+1} (raw JSON input):\n"
             quotedJson = '```\n' + r.rawResponse + '\n```\n'
-            markdown_to_text(title + quotedJson, printText=True, sanitize=not options.no_sanitize)
-            markdown_to_text('---\n', printText=True)
+            markdown_to_text(title + quotedJson, printText=printMarkdown, sanitize=sanitizeText)
+            markdown_to_text('---\n', printText=printMarkdown)
         return
     
     if options.raw_all:
         for i, r in enumerate(selected_chat.requests):
             title = f"## Request & Response {i+1} (raw JSON input):\n"
             quotedJson = '```\n' + json.dumps(r.requestDict, indent=2) + '\n```\n'
-            markdown_to_text(title + quotedJson, printText=True, sanitize=not options.no_sanitize)
-            markdown_to_text('---\n', printText=True)
+            markdown_to_text(title + quotedJson, printText=printMarkdown, sanitize=sanitizeText)
+            markdown_to_text('---\n', printText=printMarkdown)
         return
 
     for i, (req, resp, _) in enumerate(selected_chat):
         title = f"## Request {i+1}\n"
-        markdown_to_text(title + req, printText=True, sanitize=not options.no_sanitize)
+        markdown_to_text(title + req, printText=printMarkdown, sanitize=sanitizeText)
         title = f"## Copilot Response {i+1}:\n"
-        markdown_to_text(title + resp, printText=True, sanitize=not options.no_sanitize)
-        markdown_to_text('---\n', printText=True)
+        markdown_to_text(title + resp, printText=printMarkdown, sanitize=sanitizeText)
+        markdown_to_text('---\n', printText=printMarkdown)
 
 
 if __name__ == "__main__":
@@ -211,9 +216,17 @@ if __name__ == "__main__":
         'help',
     ]
 
+    # Special case handling for VSCode launch.json argsExpand option
+    if len(sys.argv) > 1 and sys.argv[1] == '--argsExpand':
+        sys.argv.pop(1)  # remove --argsExpand
+        if len(sys.argv) > 1:  # still have args to expand
+            additionalArgs = ' '.join(sys.argv[1:])
+            sys.argv = sys.argv[:1] + shlex.split(additionalArgs)
+
     # global options
     parser.add_argument('--storage', dest='workspaceStorageDir', metavar='DIR', type=str, help='storage directory for workspaces')
     parser.add_argument('-v', '--verbose', action='store_true', help='enable verbose output')
+    parser.add_argument('--parse-only', action='store_true', help='parse input but do not print anything')
 
     # input options
     grp = parser.add_argument_group('Input options')
@@ -252,10 +265,18 @@ if __name__ == "__main__":
     if options.reverse and options.sort != '':
         options.sort = '-' + options.sort
 
+    # sanitize convenience option
+    options.sanitize = not options.no_sanitize
+
     # setup logging
     log_level = logging.DEBUG if options.verbose else logging.INFO
     logging.basicConfig(level=log_level, format='%(levelname)s %(name)s: %(message)s', force=True)
     options.log = logging.getLogger(me)
+
+    # setup parse-only mode
+    options.printmd = True if not options.parse_only else False
+    if options.parse_only and not options.verbose:
+        options.log.info("run with --verbose for more parsing details")
 
     # help command
     if options.cmd == 'help':
