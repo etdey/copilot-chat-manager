@@ -11,7 +11,7 @@ import hashlib, json, logging
 from typing import Iterator
 from pprint import pformat
 
-from ChatRequest import Request
+from ChatRequest import Request, ChatRequestParseError, ChatRequestEmptyRequest, ChatRequestCanceled
 
 
 # Logger; may be overridden by users of this module
@@ -27,7 +27,7 @@ class Chat:
         return ['id', 'createDate', 'lastUpdate']
 
 
-    def __init__(self, sessionInput: dict | str, id: str = '', lastUpdate: float = 0.0) -> None:
+    def __init__(self, sessionInput: dict | str, id: str = '', lastUpdate: float = 0.0, workspaceId: str = '<empty>') -> None:
         """initialize the chat session from a dictionary or JSON string"""
         
         self.id: str = id   # None value is handled later
@@ -54,10 +54,16 @@ class Chat:
             self.id = hasher.hexdigest()
 
         for req in sessionDict.get('requests', []):
-            r = Request(req)
-            self.requests.append(r)
-            self.size += r.size
-
+            try:
+                r = Request(req)
+                self.requests.append(r)
+                self.size += r.size
+            except ChatRequestEmptyRequest as e:
+                Log.debug(f"chat request is empty in workspace {workspaceId} chat {self.id}; skipping response parsing")
+            except ChatRequestCanceled as e:
+                Log.debug(f"skipping canceled request in workspace {workspaceId} chat {self.id}: {e}")
+            except ChatRequestParseError as e:
+                Log.info(f"skipping unparseable request in workspace {workspaceId} chat {self.id}: {e}")
 
     def __len__(self):
         return len(self.requests)
