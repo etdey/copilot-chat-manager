@@ -17,6 +17,18 @@ Log_Default_Format = '%(levelname)s %(name)s: %(message)s'
 MD_BLOCK_QUOTE_BOOKEND = '```'
 MD_INLINE_QUOTE_BOOKEND = '`'
 
+SKIPPED_RESPONSE_KINDS = [
+    'codeblockUri',
+    'confirmation',
+    'command',
+    'extensions',
+    'prepareToolInvocation',
+    'progressMessage',
+    'progressTaskSerialized',
+    'markdownVuln',
+    'toolInvocationSerialized',
+    'undoStop',
+]
 
 class ChatRequestParseError(Exception):
     """Raised when a chat request cannot be parsed due to an unexpected structure"""
@@ -77,7 +89,9 @@ class Request:
                     # responseValue += v + '\n\n'
                     responseValue += v
 
-            # edited file in the workspace; make note of the lines that were changed
+            # edited file in the workspace; make note of the lines that were changed;
+            # a future enhancement would be to show the added text; this could be tricky
+            # when Copilot uses multiple passes to arrive at a final text
             elif resp.get('kind','') == 'textEditGroup' and resp.get('uri', ''):
                 fsPath = resp['uri'].get('fsPath', '**unknown file**')
                 responseValue += f"Edited file: `{fsPath}`\n"
@@ -100,8 +114,30 @@ class Request:
                             responseValue += f"to {line_end}\n" if line_end > line_start else '\n'
                         except KeyError:
                             raise ChatRequestParseError(f"unknown editRegion dict structure: \n{pformat(editRegion)}")
-                
                 responseValue += '\n'  # extra newline after file edit summary
+            
+            # inline references to files or method names; inline quote it
+            elif resp.get('kind','') == 'inlineReference':
+                ref = '**unknown reference**'
+                ref = resp['inlineReference']['fsPath'] if 'fsPath' in resp['inlineReference'] else ref
+                ref = resp['inlineReference']['name'] if 'name' in resp['inlineReference'] else ref
+
+                responseValue += f"{MD_INLINE_QUOTE_BOOKEND}{ref}{MD_INLINE_QUOTE_BOOKEND}"
+                if ref == '**unknown reference**':
+                    responseValue += f"\n{MD_BLOCK_QUOTE_BOOKEND}{pformat(resp['inlineReference'])}{MD_BLOCK_QUOTE_BOOKEND}\n"
+            
+            # skip response kinds that aren't useful for reporting
+            elif resp.get('kind','') in SKIPPED_RESPONSE_KINDS:
+                pass
+
+            # report response kinds that haven't been explicitly handled;
+            # these may warrant investigation for possible handling
+            elif 'kind' in resp:
+                Log.info(f"skipping unhandled response kind: {resp['kind']}")
+
+            # skip responseDict without a 'kind' key
+            else:
+                pass
 
         self.response = responseValue
 
