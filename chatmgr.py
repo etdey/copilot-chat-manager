@@ -300,6 +300,3 @@ if __name__ == "__main__":
         mode_workspace(options)
     elif mode == 'chat':
         mode_chat(options)
-
-
-    sys.exit(1)
