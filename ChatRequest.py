@@ -81,8 +81,8 @@ class Request:
             if resp.get('kind','') == 'toolInvocation' and resp.get('presentation','') == 'hidden':
                 hiddenPresentation = True
 
-            # simple text value response
-            if 'value' in resp:
+            # simple text value response w/o a kind qualifier
+            if 'value' in resp and 'kind' not in resp:
                 v = resp['value']
                 # skip standalone block quote start/stop if the presentation is hidden
                 if not hiddenPresentation and v.strip() != MD_BLOCK_QUOTE_BOOKEND:
@@ -99,7 +99,7 @@ class Request:
                 for edit in resp.get('edits', []):
                     for editRegion in edit:
                         if not isinstance(editRegion, dict):
-                            continue
+                            raise ChatRequestParseError(f"expected editRegion to be a dict; type is: {type(editRegion)} \n{pformat(editRegion)}")
                         try:
                             text_len = len(editRegion['text'])
                             if text_len == 0:
@@ -112,8 +112,8 @@ class Request:
                             
                             responseValue += f"line {line_start} "
                             responseValue += f"to {line_end}\n" if line_end > line_start else '\n'
-                        except KeyError:
-                            raise ChatRequestParseError(f"unknown editRegion dict structure: \n{pformat(editRegion)}")
+                        except (KeyError, TypeError) as e:
+                            raise ChatRequestParseError(f"unknown editRegion dict structure: {e} \n{pformat(editRegion)}")
                 responseValue += '\n'  # extra newline after file edit summary
             
             # inline references to files or method names; inline quote it
