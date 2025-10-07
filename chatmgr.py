@@ -192,9 +192,9 @@ def mode_chat(options: argparse.Namespace) -> None:
         markdown_to_text('---\n', printText=printMarkdown)
 
 
-if __name__ == "__main__":
-    me = os.path.basename(sys.argv[0])
-    mydir = os.path.dirname(os.path.abspath(sys.argv[0]))
+def main(argv: list[str]) -> int:
+    me = os.path.basename(argv[0])
+    mydir = os.path.dirname(os.path.abspath(argv[0]))
 
     # OS specific default workspace path
     def_workspace = None
@@ -217,11 +217,11 @@ if __name__ == "__main__":
     ]
 
     # Special case handling for VSCode launch.json argsExpand option
-    if len(sys.argv) > 1 and sys.argv[1] == '--argsExpand':
-        sys.argv.pop(1)  # remove --argsExpand
-        if len(sys.argv) > 1:  # still have args to expand
-            additionalArgs = ' '.join(sys.argv[1:])
-            sys.argv = sys.argv[:1] + shlex.split(additionalArgs)
+    if len(argv) > 1 and argv[1] == '--argsExpand':
+        argv.pop(1)  # remove --argsExpand
+        if len(argv) > 1:  # still have args to expand
+            additionalArgs = ' '.join(argv[1:])
+            argv = argv[:1] + shlex.split(additionalArgs)
 
     # global options
     parser.add_argument('--storage', dest='workspaceStorageDir', metavar='DIR', type=str, help='storage directory for workspaces')
@@ -247,7 +247,7 @@ if __name__ == "__main__":
     # positional arguments
     parser.add_argument('cmd', type=str, nargs='?', choices=cli_commands, default=cli_commands[0], help='command to run (default: %(default)s)')
 
-    options = parser.parse_args()
+    options = parser.parse_args(argv[1:])
 
     # use default workspace directory if none specified
     if not options.workspaceStorageDir:
@@ -256,10 +256,10 @@ if __name__ == "__main__":
     # validate workspace directory
     if not options.workspaceStorageDir:
         print("No workspace specified and no default workspace available for this OS.")
-        sys.exit(1)
+        return 1
     if not os.path.exists(options.workspaceStorageDir):
         print(f"Workspace directory does not exist: {options.workspaceStorageDir}")
-        sys.exit(1)
+        return 1
 
     # fixup sort specification if reverse specified
     if options.reverse and options.sort != '':
@@ -281,7 +281,7 @@ if __name__ == "__main__":
     # help command
     if options.cmd == 'help':
         parser.print_help()
-        sys.exit(0)
+        return 0
 
     mode = 'global'
     if options.workspace is not None:
@@ -292,7 +292,7 @@ if __name__ == "__main__":
     # error help message
     if options.chat is not None and options.workspace is None:
         print("If --chat is specified, --workspace must also be specified.")
-        sys.exit(1)
+        return 1
 
     if mode == 'global':
         mode_global(options)
@@ -300,3 +300,9 @@ if __name__ == "__main__":
         mode_workspace(options)
     elif mode == 'chat':
         mode_chat(options)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
