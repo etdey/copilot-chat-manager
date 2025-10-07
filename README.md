@@ -32,6 +32,8 @@ source .venv-macos/bin/activate
 pip3 install -r requirements.txt
 ```
 
+NOTE: If you want to do development and testing, substitute the `requirements-dev.txt` file in the above instructions. Thus, `pip install -r requirements-dev.txt` on Windows. 
+
 ## Running 
 
 These are the steps to run the tool.

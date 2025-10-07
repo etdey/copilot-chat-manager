@@ -1,6 +1,5 @@
 #
-# Python project dependencies
+# Python project runtime dependencies
 #
 
 rich>=14,<15
-flake8>=7,<8
