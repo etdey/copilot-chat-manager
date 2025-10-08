@@ -7,7 +7,7 @@ See the project's `LICENSE` file for details about the software license.
 
 ## Setup
 
-You must use at least Python 3.7. There may be constructs that require a higher version, but I know that 3.7 is required. 
+You must use at least Python 3.7. There may be constructs that require a higher version, but I know that at least 3.7 is required. 
 
 1. Clone this repo
 1. Create a Python virtual environment
@@ -121,6 +121,9 @@ View the raw JSON for request/response elements of a chat session:
 
 ## Testing and Development
 
+If you are going to do development and testing, you should install the packages from the `requirements-dev.txt` file as shown above with the virtual environment setup.
+
+
 ### Automated Tests
 
 The Python `unittest` framework is used for automated tests. All of the unit tests can be executed with the `run_tests.sh` shell script on MacOS/Linux or with the `run_tests.ps1` PowerShell script on Windows.
@@ -139,6 +142,25 @@ When `--argsExpand` appears as the _first_ option (i.e., `sys.argv[1]`), these a
 1. `--argsExpand` argument is removed
 1. Remaining arguments are joined into one string with whitespace
 1. `sys.argv[1:]` becomes the output from `shlex.split()` on the combined argument string
+
+
+### Build and Setuptools
+
+Build for distribution or install on:
+
+  Windows  
+  `python -m build`
+
+  MacOS/Linux  
+  `python3 -m build`
+
+There are cleanup scripts included to remove the `build` and `setuptools` artifacts.
+
+  Windows  
+  `.\clean.ps1`
+
+  MacOS/Linux  
+  `./clean.sh`
 
 
 ## VSCode Workspace Storage
@@ -178,7 +200,6 @@ This is the "Yes, I know about it and intend to fix it," stuff.
 - Sort keys are very picky about their names and are slightly different from the displayed output columns.
 - No interactive shell to work within; e.g., `cmd` library.
 - No export to Obsidian vaults.
-- Incomplete unit tests. Sad. 😭
 - No actual testing on Linux 🐧 but it probably works, right?
 - Markdown styling is the vanilla default that you get from the `rich` package.
 - No markdown or plain text export options.
