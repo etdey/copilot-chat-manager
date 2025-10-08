@@ -7,7 +7,9 @@ Copyright (c) 2025 by Eric Dey. All rights reserved.
 
 from __future__ import annotations  # for forward references in type hints
 
-import json, logging, os
+import json
+import logging
+import os
 from typing import Iterator
 
 from ChatSession import Chat
@@ -25,7 +27,7 @@ class WorkspaceNoChatSessions(Exception):
 
 class Workspaces:
 
-    def __init__(self, workspaceStorageDir: str, sortBy: str = '') -> None:  
+    def __init__(self, workspaceStorageDir: str, sortBy: str = '') -> None:
         # Configure logging only if it hasn't been configured yet
         logging.basicConfig(format=Log_Default_Format, force=False)
 
@@ -61,20 +63,20 @@ class Workspaces:
         """Sorts the workspaces list by the given attribute name."""
         if sortBy != '':
             self._sortAttribute = sortBy  # update sorting attribute
-        
+
         if self._sortAttribute == '':
             return
-        
+
         # pull out the reverse flag if specified
         if self._sortAttribute.startswith('-'):
             self._sortReverse = True
             self._sortAttribute = self._sortAttribute[1:]
-        
+
         # **TODO**: implement fuzzy matching of attribute names w/difflib
         if self._sortAttribute not in Workspace.sorting_attributes():
             Log.warning(f'Invalid sort attribute for Workspace: {self._sortAttribute}')
             return
-            
+
         self.workspaces.sort(key=lambda w: getattr(w, self._sortAttribute), reverse=self._sortReverse)
 
 
@@ -89,7 +91,7 @@ class Workspaces:
 
     def __len__(self):
         return len(self.workspaces)
-    
+
 
     def __iter__(self) -> Iterator[Workspace]:
         for w in self.workspaces:
@@ -97,12 +99,12 @@ class Workspaces:
 
 
 class Workspace:
-    
+
     @staticmethod
     def sorting_attributes() -> list[str]:
         """returns a list of valid sorting attribute names for Workspace"""
         return ['id', 'createDate', 'lastUpdate', 'folder']
-    
+
 
     def __init__(self, storageDir: str, sortBy: str = '') -> None:
         # Configure logging only if it hasn't been configured yet
@@ -119,7 +121,7 @@ class Workspace:
         self._sortAttribute = sortBy  # chats sorting attribute name
         self._sortReverse = False  # sort descending if attribute name starts with '-'
         self.createDate = os.path.getctime(storageDir)
-        self.lastUpdate = self.createDate # default until we find chat sessions
+        self.lastUpdate = self.createDate  # default until we find chat sessions
         self.chats: list[Chat] = []  # chat objects
         self.folder = ''  # project directory this workspace is associated with
         self.id = os.path.basename(self.storageDir)  # id is the storageDir name
@@ -150,7 +152,7 @@ class Workspace:
         sessionFiles = [f for f in os.listdir(self.chatSessionsFolder) if os.path.isfile(os.path.join(self.chatSessionsFolder, f))]
         if not sessionFiles:
             return  # stop since no chat sessions files found
-        
+
         file_dates = [(f, os.path.getctime(os.path.join(self.chatSessionsFolder, f))) for f in sessionFiles]
         self.lastUpdate = max(file_dates, key=lambda x: x[1])[1]
 
@@ -173,7 +175,7 @@ class Workspace:
         """Sorts the chats list by the given attribute name."""
         if sortBy != '':
             self._sortAttribute = sortBy  # update sorting attribute
-        
+
         if self._sortAttribute == '':
             return
 
