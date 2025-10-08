@@ -7,8 +7,10 @@ Copyright (c) 2025 by Eric Dey. All rights reserved.
 
 from __future__ import annotations  # for forward references in type hints
 
-import json, logging
+import json
+import logging
 from pprint import pformat
+
 
 # Logger; may be overridden by users of this module
 Log = logging.getLogger(__file__)
@@ -30,13 +32,16 @@ SKIPPED_RESPONSE_KINDS = [
     'undoStop',
 ]
 
+
 class ChatRequestParseError(Exception):
     """Raised when a chat request cannot be parsed due to an unexpected structure"""
     pass
 
+
 class ChatRequestEmptyRequest(Exception):
     """Raised when a chat request has no request text"""
     pass
+
 
 class ChatRequestCanceled(Exception):
     """Raised when a chat request was canceled before completing"""
@@ -44,7 +49,7 @@ class ChatRequestCanceled(Exception):
 
 
 class Request:
-    def __init__(self, requestInput: dict|str) -> None:
+    def __init__(self, requestInput: dict|str) -> None:  # noqa: E227
         self.request: str = ''
         self.response: str = ''
         self.size: int = 0  # size of the request + response strings
@@ -57,15 +62,15 @@ class Request:
         elif isinstance(requestInput, dict):
             self.requestDict = requestInput
         else:
-            raise ValueError(f"requestInput must be a dict or JSON string")
+            raise ValueError("requestInput must be a dict or JSON string")
 
         if self.requestDict.get('isCanceled', False) is True:
-            raise ChatRequestCanceled(f"request was canceled")
+            raise ChatRequestCanceled("request was canceled")
 
         self.request = self.requestDict.get('message', {}).get('text', '')
         self.rawRequest = json.dumps(self.request, indent=2)
         if self.request == '':
-            raise ChatRequestEmptyRequest(f"request is empty")
+            raise ChatRequestEmptyRequest("request is empty")
 
         responses = self.requestDict.get('response', [])
         self.rawResponse = json.dumps(responses, indent=2)
@@ -78,7 +83,7 @@ class Request:
             if not isinstance(resp, dict):
                 continue
 
-            if resp.get('kind','') == 'toolInvocation' and resp.get('presentation','') == 'hidden':
+            if resp.get('kind', '') == 'toolInvocation' and resp.get('presentation', '') == 'hidden':
                 hiddenPresentation = True
 
             # simple text value response w/o a kind qualifier
@@ -92,10 +97,10 @@ class Request:
             # edited file in the workspace; make note of the lines that were changed;
             # a future enhancement would be to show the added text; this could be tricky
             # when Copilot uses multiple passes to arrive at a final text
-            elif resp.get('kind','') == 'textEditGroup' and resp.get('uri', ''):
+            elif resp.get('kind', '') == 'textEditGroup' and resp.get('uri', ''):
                 fsPath = resp['uri'].get('fsPath', '**unknown file**')
                 responseValue += f"Edited file: `{fsPath}`\n"
-                plural = lambda n,s='s': s if n > 1 else ''
+                plural = lambda n, s='s': s if n > 1 else ''  # noqa: E731
                 for edit in resp.get('edits', []):
                     for editRegion in edit:
                         if not isinstance(editRegion, dict):
@@ -103,21 +108,21 @@ class Request:
                         try:
                             text_len = len(editRegion['text'])
                             if text_len == 0:
-                                responseValue += f"  - deleted "
+                                responseValue += "  - deleted "
                             else:
                                 responseValue += f"  - added {text_len} char{plural(text_len)} of text, "
-                            
+
                             line_start = editRegion['range']['startLineNumber']
                             line_end = editRegion['range']['endLineNumber']
-                            
+
                             responseValue += f"line {line_start} "
                             responseValue += f"to {line_end}\n" if line_end > line_start else '\n'
                         except (KeyError, TypeError) as e:
                             raise ChatRequestParseError(f"unknown editRegion dict structure: {e} \n{pformat(editRegion)}")
                 responseValue += '\n'  # extra newline after file edit summary
-            
+
             # inline references to files or method names; inline quote it
-            elif resp.get('kind','') == 'inlineReference':
+            elif resp.get('kind', '') == 'inlineReference':
                 ref = '**unknown reference**'
                 ref = resp['inlineReference']['fsPath'] if 'fsPath' in resp['inlineReference'] else ref
                 ref = resp['inlineReference']['name'] if 'name' in resp['inlineReference'] else ref
@@ -125,9 +130,9 @@ class Request:
                 responseValue += f"{MD_INLINE_QUOTE_BOOKEND}{ref}{MD_INLINE_QUOTE_BOOKEND}"
                 if ref == '**unknown reference**':
                     responseValue += f"\n{MD_BLOCK_QUOTE_BOOKEND}{pformat(resp['inlineReference'])}{MD_BLOCK_QUOTE_BOOKEND}\n"
-            
+
             # skip response kinds that aren't useful for reporting
-            elif resp.get('kind','') in SKIPPED_RESPONSE_KINDS:
+            elif resp.get('kind', '') in SKIPPED_RESPONSE_KINDS:
                 pass
 
             # report response kinds that haven't been explicitly handled;
