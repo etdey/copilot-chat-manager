@@ -7,9 +7,10 @@ Copyright (c) 2025 by Eric Dey. All rights reserved.
 
 from __future__ import annotations  # for forward references in type hints
 
-import hashlib, json, logging
+import hashlib
+import json
+import logging
 from typing import Iterator
-from pprint import pformat
 
 from ChatRequest import Request, ChatRequestParseError, ChatRequestEmptyRequest, ChatRequestCanceled
 
@@ -20,7 +21,7 @@ Log_Default_Format = '%(levelname)s %(name)s: %(message)s'
 
 
 class Chat:
-    
+
     @staticmethod
     def sorting_attributes() -> list[str]:
         """returns a list of valid attribute names for Chat"""
@@ -29,7 +30,7 @@ class Chat:
 
     def __init__(self, sessionInput: dict | str, id: str = '', lastUpdate: float = 0.0, workspaceId: str = '<empty>') -> None:
         """initialize the chat session from a dictionary or JSON string"""
-        
+
         self.id: str = id   # None value is handled later
         self.lastUpdate: float = lastUpdate
         self.createDate: float = lastUpdate  # always same as lastUpdate
@@ -47,7 +48,7 @@ class Chat:
         else:
             raise ValueError("sessionInput must be a dict or JSON string")
 
-        # Generate a stable hash if none was provided        
+        # Generate a stable hash if none was provided
         if self.id == '':
             hasher = hashlib.md5()  # this isn't crypto so cool your jets
             hasher.update(json.dumps(sessionDict, sort_keys=True).encode('utf-8'))
@@ -58,12 +59,13 @@ class Chat:
                 r = Request(req)
                 self.requests.append(r)
                 self.size += r.size
-            except ChatRequestEmptyRequest as e:
+            except ChatRequestEmptyRequest:
                 Log.debug(f"chat request is empty in workspace {workspaceId} chat {self.id}; skipping response parsing")
             except ChatRequestCanceled as e:
                 Log.debug(f"skipping canceled request in workspace {workspaceId} chat {self.id}: {e}")
             except ChatRequestParseError as e:
                 Log.info(f"skipping unparseable request in workspace {workspaceId} chat {self.id}: {e}")
+
 
     def __len__(self):
         return len(self.requests)
