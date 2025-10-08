@@ -9,7 +9,14 @@ Created: September 2025
 
 """
 
-import argparse, datetime, json, logging, os, shlex, sys, urllib.parse
+import argparse
+import datetime
+import json
+import logging
+import os
+import shlex
+import sys
+import urllib.parse
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -74,7 +81,7 @@ def load_workspaces(storageDir: str, sortBy: str = '') -> Workspace.Workspaces:
 
 def print_workspace_summary(workspaces: Workspace.Workspaces) -> None:
     """prints a summary of the workspaces and their chat sessions"""
-    md  = f'# Available Workspaces\n'
+    md = '# Available Workspaces\n'
     md += f'**Workspace storage:** {folder_url_format(workspaces.storageDir)}  \n'
     md += f'**Workspaces with chat sessions:** {len(workspaces)}\n\n'
     md += '| ID | Workspace Folder | Created | Last Updated | Chats |\n'
@@ -84,7 +91,7 @@ def print_workspace_summary(workspaces: Workspace.Workspaces) -> None:
     markdown_to_text(md, printText=True)
 
 
-def print_sortkeys(workspace:bool = True, chat:bool = True) -> None:
+def print_sortkeys(workspace: bool = True, chat: bool = True) -> None:
     """prints the available sort keys for workspaces and chats"""
     if workspace:
         print('Workspace sort keys:', end=' ')
@@ -96,11 +103,11 @@ def print_sortkeys(workspace:bool = True, chat:bool = True) -> None:
 
 def mode_global(options: argparse.Namespace) -> None:
     """handle global mode (no workspace or chat specified)"""
-    
+
     if options.cmd == 'sortkeys':
         print_sortkeys(workspace=True, chat=False)
         return
-    
+
     if options.cmd == 'list' or options.cmd == 'view':
         workspaces = load_workspaces(options.workspaceStorageDir, sortBy=options.sort)
         print_workspace_summary(workspaces) if options.printmd else None
@@ -128,7 +135,7 @@ def mode_workspace(options: argparse.Namespace) -> None:
     # sorting for chat sessions
     selected_workspace.sort(sortBy=options.sort)
 
-    md  = f'# Workspace Details\n'
+    md = '# Workspace Details\n'
     md += f'**Workspace ID:** {selected_workspace.id}  \n'
     md += f'**Workspace Folder:** {folder_url_format(selected_workspace.folder or "")}  \n'
     md += f'**Created:** {timestamp_format(selected_workspace.createDate)}  \n'
@@ -157,7 +164,7 @@ def mode_chat(options: argparse.Namespace) -> None:
     printMarkdown = options.printmd
     sanitizeText = options.sanitize
 
-    md  = f'# Chat Session Details\n'
+    md = '# Chat Session Details\n'
     md += f'**Workspace ID:** {selected_workspace.id}  \n'
     md += f'**Chat ID:** {selected_chat.id}  \n'
     md += f'**Created:** {timestamp_format(selected_chat.createDate)}  \n'
@@ -175,7 +182,7 @@ def mode_chat(options: argparse.Namespace) -> None:
             markdown_to_text(title + quotedJson, printText=printMarkdown, sanitize=sanitizeText)
             markdown_to_text('---\n', printText=printMarkdown)
         return
-    
+
     if options.raw_all:
         for i, r in enumerate(selected_chat.requests):
             title = f"## Request & Response {i+1} (raw JSON input):\n"
@@ -194,7 +201,6 @@ def mode_chat(options: argparse.Namespace) -> None:
 
 def main(argv: list[str]) -> int:
     me = os.path.basename(argv[0])
-    mydir = os.path.dirname(os.path.abspath(argv[0]))
 
     # OS specific default workspace path
     def_workspace = None
@@ -288,7 +294,7 @@ def main(argv: list[str]) -> int:
         mode = 'workspace'
         if options.chat is not None:
             mode = 'chat'
-    
+
     # error help message
     if options.chat is not None and options.workspace is None:
         print("If --chat is specified, --workspace must also be specified.")
