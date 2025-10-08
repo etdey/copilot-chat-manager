@@ -5,21 +5,24 @@ Copyright (c) 2025 by Eric Dey. All rights reserved.
 
 """
 
+import json
+import os
+import sys
 import unittest
 from unittest.mock import patch as unittest_mock_patch
-import json, os, sys
 
 # Ensure the parent directory is in sys.path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from ChatRequest import Request, ChatRequestParseError, ChatRequestEmptyRequest, ChatRequestCanceled, SKIPPED_RESPONSE_KINDS
+from ChatRequest import Request, ChatRequestParseError, ChatRequestEmptyRequest, ChatRequestCanceled, SKIPPED_RESPONSE_KINDS  # noqa: E402
+
 
 class ChatRequestTests(unittest.TestCase):
-    
+
     def test_basic_request_response(self):
         """Basic request and response parsing with single and multiple response blocks"""
-        responses = [ {"value": "World"}, {"value": "And"}, {"value": "Universe"} ]
-        input_json = { "message": {"text": "Hello"}, "response": [] }
+        responses = [{"value": "World"}, {"value": "And"}, {"value": "Universe"}]
+        input_json = {"message": {"text": "Hello"}, "response": []}
         for i in range(len(responses)):
             with self.subTest(msg=f"{i} response blocks", i=i, input_json=input_json, responses=responses):
                 input_json['response'] = responses[:i+1]
@@ -123,7 +126,7 @@ class ChatRequestTests(unittest.TestCase):
                             "kind": "textEditGroup",
                             "uri": {"fsPath": "file.py"},
                             "edits": [
-                                [ bad_edit ]
+                                [bad_edit]
                             ]
                         }
                     ]

@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 # Ensure the parent directory is in sys.path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from ChatSession import Chat
+from ChatSession import Chat  # noqa: E402
 
 
 class ChatSessionTests(unittest.TestCase):
