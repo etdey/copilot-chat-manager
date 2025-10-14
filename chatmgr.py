@@ -4,7 +4,6 @@ GitHub Copilot chat manager tool.
 
 Copyright (c) 2025 by Eric Dey. All rights reserved.
 
-Written by Eric Dey <eric.dey@korbix.com>
 Created: September 2025
 
 """
