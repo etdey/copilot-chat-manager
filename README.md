@@ -205,4 +205,3 @@ This is the "Yes, I know about it and intend to fix it," stuff.
 - No export to Obsidian vaults.
 - No actual testing on Linux 🐧 but it probably works, right?
 - Markdown styling is the vanilla default that you get from the `rich` package.
-- No markdown or plain text export options.
