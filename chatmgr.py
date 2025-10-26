@@ -7,6 +7,7 @@ Copyright (c) 2025 by Eric Dey. All rights reserved.
 Created: September 2025
 
 """
+from __future__ import annotations
 
 import argparse
 import datetime
@@ -16,6 +17,7 @@ import os
 import shlex
 import sys
 import urllib.parse
+from typing import Optional, TextIO
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -46,12 +48,38 @@ def sanitize_md_text(text: str) -> str:
     return text
 
 
-def markdown_to_text(markdown: str, printText: bool = True, sanitize: bool = False) -> None:
+def markdown_output(
+    markdown: str,
+    printText: bool = True,
+    sanitize: bool = False,
+    outputFD: Optional[TextIO] = None,
+) -> None:
+    """
+    Write markdown text to the console or to a file. When outputting to the
+    console, terminal window formatting escape sequences are inserted into the
+    output stream. For stdout printing without these escape sequences, use
+    outputFD=sys.stdout.
+
+    Args:
+        markdown: the markdown text to output
+        printText: if True, prints the markdown text; if False, does not print
+        sanitize: if True, sanitizes the markdown text before writing
+        outputFD: if not None, writes to this open file descriptor
+    """
     if sanitize:
         markdown = sanitize_md_text(markdown)
+    
+    # file output without console formatting
+    if outputFD is not None and printText:
+        outputFD.write(markdown)
+        outputFD.write('\n')  # only needed for file output
+        return
+
+    # console output    
     md = Markdown(markdown)
     if printText:
         Console().print(md)
+    return
 
 
 def elipsis_id(id: str, begin: int = 6, end: int = 0) -> str:
@@ -87,7 +115,7 @@ def print_workspace_summary(workspaces: Workspace.Workspaces) -> None:
     md += '|----|------------------|---------|--------------|-------|\n'
     for w in workspaces:
         md += f'| {elipsis_id(w.id)} | {folder_url_format(w.folder)} | {timestamp_format(w.createDate)} | {timestamp_format(w.lastUpdate)} | {len(w.chats)} |\n'
-    markdown_to_text(md, printText=True)
+    markdown_output(md, printText=True)
 
 
 def print_sortkeys(workspace: bool = True, chat: bool = True) -> None:
@@ -144,7 +172,7 @@ def mode_workspace(options: argparse.Namespace) -> None:
     md += '|---------|---------|----------|------|\n'
     for chat in selected_workspace.chats:
         md += f'| {elipsis_id(chat.id or "")} | {timestamp_format(chat.createDate)} | {len(chat)} | {chat.size} |\n'
-    markdown_to_text(md, printText=printMarkdown)
+    markdown_output(md, printText=printMarkdown)
 
 
 def mode_chat(options: argparse.Namespace) -> None:
@@ -160,7 +188,10 @@ def mode_chat(options: argparse.Namespace) -> None:
         options.log.error(f'chat session not found in workspace {options.workspace}: {options.chat}')
         return
 
-    printMarkdown = options.printmd
+    output_kwargs = {
+        'printText': options.printmd,
+        'outputFD': options.outputFD,
+    }
     sanitizeText = options.sanitize
 
     md = '# Chat Session Details\n'
@@ -169,33 +200,33 @@ def mode_chat(options: argparse.Namespace) -> None:
     md += f'**Created:** {timestamp_format(selected_chat.createDate)}  \n'
     md += f'**Size (chars):** {selected_chat.size}  \n'
     md += f'**Requests:** {len(selected_chat)}\n\n'
-    markdown_to_text(md, printText=printMarkdown)
+    markdown_output(md, **output_kwargs)
 
     if options.raw:
         for i, r in enumerate(selected_chat.requests):
             title = f"## Request {i+1} (raw JSON input):\n"
             quotedJson = '```\n' + r.rawRequest + '\n```\n'
-            markdown_to_text(title + quotedJson, printText=printMarkdown, sanitize=sanitizeText)
+            markdown_output(title + quotedJson, **output_kwargs, sanitize=sanitizeText)
             title = f"## Copilot Response {i+1} (raw JSON input):\n"
             quotedJson = '```\n' + r.rawResponse + '\n```\n'
-            markdown_to_text(title + quotedJson, printText=printMarkdown, sanitize=sanitizeText)
-            markdown_to_text('---\n', printText=printMarkdown)
+            markdown_output(title + quotedJson, **output_kwargs, sanitize=sanitizeText)
+            markdown_output('\n---\n', **output_kwargs)
         return
 
     if options.raw_all:
         for i, r in enumerate(selected_chat.requests):
             title = f"## Request & Response {i+1} (raw JSON input):\n"
             quotedJson = '```\n' + json.dumps(r.requestDict, indent=2) + '\n```\n'
-            markdown_to_text(title + quotedJson, printText=printMarkdown, sanitize=sanitizeText)
-            markdown_to_text('---\n', printText=printMarkdown)
+            markdown_output(title + quotedJson, **output_kwargs, sanitize=sanitizeText)
+            markdown_output('\n---\n', **output_kwargs)
         return
 
     for i, (req, resp, _) in enumerate(selected_chat):
         title = f"## Request {i+1}\n"
-        markdown_to_text(title + req, printText=printMarkdown, sanitize=sanitizeText)
+        markdown_output(title + req + '\n', **output_kwargs, sanitize=sanitizeText)
         title = f"## Copilot Response {i+1}:\n"
-        markdown_to_text(title + resp, printText=printMarkdown, sanitize=sanitizeText)
-        markdown_to_text('---\n', printText=printMarkdown)
+        markdown_output(title + resp + '\n', **output_kwargs, sanitize=sanitizeText)
+        markdown_output('\n---\n', **output_kwargs)
 
 
 def main(argv: list[str]) -> int:
@@ -243,6 +274,7 @@ def main(argv: list[str]) -> int:
     grp.add_argument('--reverse', '-r', action='store_true', help='reverse the sort order')
     grp.add_argument('--raw', action='store_true', help='show raw JSON input for chat sessions')
     grp.add_argument('--raw-all', action='store_true', help='show all raw JSON input for chat sessions')
+    grp.add_argument('--output', '-o', type=str, metavar='FILE', default=None, help='write to file instead of console ("-" for stdout)')
 
     # filtering options
     grp = parser.add_argument_group('Filtering')
@@ -253,6 +285,11 @@ def main(argv: list[str]) -> int:
     parser.add_argument('cmd', type=str, nargs='?', choices=cli_commands, default=cli_commands[0], help='command to run (default: %(default)s)')
 
     options = parser.parse_args(argv[1:])
+
+    # help command; same as --help
+    if options.cmd == 'help':
+        parser.print_help()
+        return 0
 
     # use default workspace directory if none specified
     if not options.workspaceStorageDir:
@@ -278,15 +315,26 @@ def main(argv: list[str]) -> int:
     logging.basicConfig(level=log_level, format='%(levelname)s %(name)s: %(message)s', force=True)
     options.log = logging.getLogger(me)
 
+    # Checking after this point is for single-shot execution where
+    # the output will be going to the console, a file, or to support
+    # parse-only mode.
+
     # setup parse-only mode
     options.printmd = True if not options.parse_only else False
     if options.parse_only and not options.verbose:
         options.log.info("run with --verbose for more parsing details")
+    if options.parse_only and options.output is not None:
+        options.log.warning("ignoring --output option in parse-only mode")
+        options.output = None
 
-    # help command
-    if options.cmd == 'help':
-        parser.print_help()
-        return 0
+    # output file descriptor setup
+    if options.output is None:
+        options.outputFD = None  # output will be to console with formatting
+    else:
+        if options.output == '-':
+            options.outputFD = sys.stdout  # MD without console formatting
+        else:
+            options.outputFD = open(options.output, 'w', encoding='utf-8')
 
     mode = 'global'
     if options.workspace is not None:
