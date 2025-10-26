@@ -53,7 +53,8 @@ MacOS/Linux:
 
 ```
 usage: chatmgr.py [-h] [--storage DIR] [-v] [--parse-only] [--no-sanitize] [--sort NAME]
-                  [--reverse] [--raw] [--raw-all] [--workspace ID] [--chat ID]
+                  [--reverse] [--raw] [--raw-all] [--output FILE] [--workspace ID]
+                  [--chat ID]
                   [{list,view,sortkeys,help}]
 
 GitHub Copilot chat manager tool.
@@ -76,6 +77,8 @@ Output options:
   --reverse, -r         reverse the sort order
   --raw                 show raw JSON input for chat sessions
   --raw-all             show all raw JSON input for chat sessions
+  --output FILE, -o FILE
+                        write to file instead of console ("-" for stdout)
 
 Filtering:
   --workspace ID, -w ID
