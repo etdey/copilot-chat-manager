@@ -86,7 +86,7 @@ document-type: copilot chat
         tags.insert(0, 'tags:')  # 0th element is the 'tags:' line
         tags_str = "\n  - ".join(tags)
         frontmatter += f"{tags_str}\n"
-    
+
     frontmatter += "---\n\n"
     return frontmatter
 
@@ -146,14 +146,14 @@ class Vault():
         obsidian_dir = os.path.join(vault_dir, '.obsidian')
         if not os.path.isdir(obsidian_dir):
             raise ObsidianValidationError(f"not a valid Obsidian vault; missing .obsidian directory: {vault_dir}")
-        
+
         # check for workspace.json file in .obsidian
         workspace_json = os.path.join(obsidian_dir, 'workspace.json')
         if not os.path.isfile(workspace_json):
             raise ObsidianValidationError(f"not a valid Obsidian vault; missing workspace.json file: {obsidian_dir}")
 
 
-    def _vault_full_path(self, vault: str|None = None, vault_name: str|None = None, vault_basedir: str|None = None) -> str | None:
+    def _vault_full_path(self, vault: str | None = None, vault_name: str | None = None, vault_basedir: str | None = None) -> str | None:
         if vault:
             return vault  # overrides name and basedir options
         if vault_name and vault_basedir:
@@ -167,21 +167,21 @@ class Vault():
         return os.path.join(vault_dir, note_folder)
 
 
-    def _note_full_path(self, vault_dir: str, note: str|None, note_folder: str, note_title: str|None) -> str | None:
+    def _note_full_path(self, vault_dir: str, note: str | None, note_folder: str, note_title: str | None) -> str | None:
         if not note and not note_title:
             return None
 
         if note_title is None:
             note_title = ''
-        
+
         assert isinstance(note_folder, str), "note_folder must be a string"
         assert isinstance(note_title, str), "note_title must be a string"
-        
+
         if note:  # note is relpath+filename
             note = os.path.join(vault_dir, note)
         else:  # build note from vault_dir, note_folder, and note_title
             note = os.path.join(vault_dir, note_folder, note_title)
-        
+
         # add .md extension if not present
         if note[-2:] != '.md':
             note += ".md"
@@ -190,12 +190,12 @@ class Vault():
         return note
 
 
-    def open_note(self, mode:str='r', encoding:str|None='utf-8', newline:str|None=None) -> IO[Any]:
+    def open_note(self, mode: str = 'r', encoding: str | None = 'utf-8', newline: str | None = None) -> IO[Any]:
         """
         Opens a file within the vault and returns a file object. This will not
         allow overwriting an existing file unless the --note-overwrite option
         was specified.
-    
+
         Args:
             mode: Same as built-in open() parameter (default: 'r')
             encoding: Same as built-in open() parameter (default: 'utf-8').
