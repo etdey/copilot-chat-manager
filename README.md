@@ -233,7 +233,6 @@ This information has been reverse engineered from observed behavior and is not a
 This is the "Yes, I know about it and intend to fix it," stuff.
 
 - No operating specific build bundles such as with `pyinstaller`; you have to checkout the source and setup a venv to run it.
-- Sort keys are very picky about their names and are slightly different from the displayed output columns.
 - No interactive shell to work within; e.g., `cmd` library.
 - No actual testing on Linux 🐧 but it probably works, right?
 - Markdown styling is the vanilla default that you get from the `rich` package.
