@@ -53,8 +53,10 @@ MacOS/Linux:
 
 ```
 usage: chatmgr.py [-h] [--storage DIR] [-v] [--parse-only] [--no-sanitize] [--sort NAME]
-                  [--reverse] [--raw] [--raw-all] [--output FILE] [--workspace ID]
-                  [--chat ID]
+                  [--reverse] [--raw] [--raw-all] [--output FILE] [--obsidian] [--workspace ID]
+                  [--chat ID] [--vault-name NAME] [--vault-basedir DIR] [--vault DIR]
+                  [--vault-noverify] [--note-folder RELPATH] [--note-title TITLE] [--note FILE]
+                  [--note-overwrite]
                   [{list,view,sortkeys,help}]
 
 GitHub Copilot chat manager tool.
@@ -79,14 +81,42 @@ Output options:
   --raw-all             show all raw JSON input for chat sessions
   --output FILE, -o FILE
                         write to file instead of console ("-" for stdout)
+  --obsidian            write to an Obsidian vault
 
 Filtering:
   --workspace ID, -w ID
                         select workspace
   --chat ID, -c ID      select chat session
 
+Obsidian vault options:
+  --vault-name NAME     name of vault directory (default: None)
+  --vault-basedir DIR   parent directory for vaults (default: C:\Users\{username}\Documents)
+  --vault DIR           full path to vault; overrides --vault-name and --vault-basedir
+  --vault-noverify      bypass vault validation checks; only directory must exist
+
+Obsidian note options:
+  --note-folder RELPATH
+                        folder relative to vault root (default: )
+  --note-title TITLE    title of the note (without ".md" extension)
+  --note FILE           relpath within vault to note file; overrides --note-folder and --note-title
+  --note-overwrite      allow replacement of existing note (default: False)
+
 If no workspace is specified, the default is:
 C:\Users\{username}\AppData\Roaming\Code\User\workspaceStorage
+
+The Obsidian vault can be specified using the --vault option, or by combining --vault-name and
+--vault-basedir. If neither is specified, the default vault parent directory is used (typically
+'Documents' or 'My Documents' in the user's home directory), and no vault name is set.
+
+The note within the vault can be specified using the --note option, or by combining --note-folder
+or --note-title with the vault path. When using the --note option, the ".md" extension will be
+added if it is not given.
+
+These environment variables are recognized:
+OBSIDIAN_VAULT_BASEDIR - Default parent directory for vaults
+OBSIDIAN_VAULT - Full path to vault
+OBSIDIAN_VAULT_NAME - Name of vault (directory name)
+OBSIDIAN_NOTE_FOLDER - Note's folder within vault (relative to vault root)
 ```
 
 The workspace default directory will change based on your operating system.
@@ -120,6 +150,9 @@ View the requests/responses rendered Markdown for a chat session:
 
 View the raw JSON for request/response elements of a chat session:  
 `python chatmgr.py -w 185d7c -c f040af --raw`
+
+Write chat session to an Obsidian note:  
+`python chatmgr.py -w 4b12da -c a395d5 --obsidian --vault-name my-vault --note-title "Chat Session"`
 
 
 ## Testing and Development
@@ -202,6 +235,5 @@ This is the "Yes, I know about it and intend to fix it," stuff.
 - No operating specific build bundles such as with `pyinstaller`; you have to checkout the source and setup a venv to run it.
 - Sort keys are very picky about their names and are slightly different from the displayed output columns.
 - No interactive shell to work within; e.g., `cmd` library.
-- No export to Obsidian vaults.
 - No actual testing on Linux 🐧 but it probably works, right?
 - Markdown styling is the vanilla default that you get from the `rich` package.
