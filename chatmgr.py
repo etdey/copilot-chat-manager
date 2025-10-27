@@ -22,7 +22,9 @@ from typing import Optional, TextIO
 from rich.console import Console
 from rich.markdown import Markdown
 
+import Obsidian
 import Workspace
+from ArgparseUtils import RawDescriptionHelpFormatterWithLineWrap
 
 
 # Defaults values for arg parsing
@@ -68,14 +70,14 @@ def markdown_output(
     """
     if sanitize:
         markdown = sanitize_md_text(markdown)
-    
+
     # file output without console formatting
     if outputFD is not None and printText:
         outputFD.write(markdown)
         outputFD.write('\n')  # only needed for file output
         return
 
-    # console output    
+    # console output
     md = Markdown(markdown)
     if printText:
         Console().print(md)
@@ -194,10 +196,18 @@ def mode_chat(options: argparse.Namespace) -> None:
     }
     sanitizeText = options.sanitize
 
-    md = '# Chat Session Details\n'
+    md = ''  # markdown output string
+
+    if options.obsidian:
+        md += Obsidian.new_note_frontmatter(selected_chat.createDate,
+                                            selected_chat.lastUpdate,
+                                            tags=['CopilotAI'])
+
+    md += '# Chat Session Details\n'
     md += f'**Workspace ID:** {selected_workspace.id}  \n'
     md += f'**Chat ID:** {selected_chat.id}  \n'
     md += f'**Created:** {timestamp_format(selected_chat.createDate)}  \n'
+    md += f'**Updated:** {timestamp_format(selected_chat.lastUpdate)}  \n'
     md += f'**Size (chars):** {selected_chat.size}  \n'
     md += f'**Requests:** {len(selected_chat)}\n\n'
     markdown_output(md, **output_kwargs)
@@ -242,8 +252,14 @@ def main(argv: list[str]) -> int:
         def_workspace = os.path.join(Defaults['userHomeDir'], Defaults['workspaceDirRelLinux'])
 
     description = 'GitHub Copilot chat manager tool.'
-    epilog = f'If no workspace is specified, the default is:\n{def_workspace or "No default for this OS"}'
-    parser = argparse.ArgumentParser(description=description, epilog=epilog)
+
+    epilog = f'If no workspace is specified, the default is: {def_workspace or "No default for this OS"}\n'
+    epilog += Obsidian.argparse_epilog()
+
+    parser = argparse.ArgumentParser(
+                description=description,
+                epilog=epilog,
+                formatter_class=RawDescriptionHelpFormatterWithLineWrap)
 
     cli_commands = [
         'list',
@@ -275,11 +291,15 @@ def main(argv: list[str]) -> int:
     grp.add_argument('--raw', action='store_true', help='show raw JSON input for chat sessions')
     grp.add_argument('--raw-all', action='store_true', help='show all raw JSON input for chat sessions')
     grp.add_argument('--output', '-o', type=str, metavar='FILE', default=None, help='write to file instead of console ("-" for stdout)')
+    grp.add_argument('--obsidian', action='store_true', default=False, help='write to an Obsidian vault')
 
     # filtering options
     grp = parser.add_argument_group('Filtering')
     grp.add_argument('--workspace', '-w', type=str, metavar='ID', default=None, help='select workspace')
     grp.add_argument('--chat', '-c', type=str, metavar='ID', default=None, help='select chat session')
+
+    # Obsidian options
+    Obsidian.argparse_groups(parser)
 
     # positional arguments
     parser.add_argument('cmd', type=str, nargs='?', choices=cli_commands, default=cli_commands[0], help='command to run (default: %(default)s)')
@@ -326,21 +346,49 @@ def main(argv: list[str]) -> int:
     if options.parse_only and options.output is not None:
         options.log.warning("ignoring --output option in parse-only mode")
         options.output = None
+    if options.parse_only and options.obsidian:
+        options.log.warning("ignoring --obsidian option in parse-only mode")
+        options.obsidian = False
+
+    # check for incompatible output options
+    if options.obsidian and options.output is not None:
+        options.log.error("cannot use --obsidian and --output together; specify either one or the other")
+        return 1
+
+    # operational mode to determine what output to generate
+    mode = 'global'
+    if options.workspace is not None:
+        mode = 'workspace'
+        if options.chat is not None:
+            mode = 'chat'
+
+    # warning about modes when Obsidian output is ignored
+    if options.obsidian and mode != 'chat':
+        options.log.warning("Obsidian output only works in chat mode; ignoring Obsidian option")
+        options.obsidian = False
+
+    # validation of Obsidian options
+    if options.obsidian:
+        try:
+            options.obsidian_vault = Obsidian.Vault(options)
+        except Obsidian.ObsidianValidationError as e:
+            print(f"Obsidian vault validation error: {e}")
+            return 1
 
     # output file descriptor setup
-    if options.output is None:
+    if options.obsidian:
+        try:
+            options.outputFD = options.obsidian_vault.open_note(mode='w')
+        except FileExistsError as e:
+            print(e)
+            return 1
+    elif options.output is None:
         options.outputFD = None  # output will be to console with formatting
     else:
         if options.output == '-':
             options.outputFD = sys.stdout  # MD without console formatting
         else:
             options.outputFD = open(options.output, 'w', encoding='utf-8')
-
-    mode = 'global'
-    if options.workspace is not None:
-        mode = 'workspace'
-        if options.chat is not None:
-            mode = 'chat'
 
     # error help message
     if options.chat is not None and options.workspace is None:
