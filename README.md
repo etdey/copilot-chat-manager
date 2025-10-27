@@ -133,7 +133,7 @@ Sorting the workspaces listing by project folder:
 `python chatmgr.py --sort folder`
 
 Reverse sorting by last update time:  
-`python chatmgr.py --sort lastUpdate -r`
+`python chatmgr.py --sort updated -r`
 
 Listing the chat sessions in a workspace:  
 `python chatmgr.py -w 1f0994`  
@@ -143,7 +143,7 @@ Listing the chat sessions in a workspace:
 `python chatmgr.py -w f58eb7ffed5d4db975e9f8948c719ca3`
 
 Show the available sort keys for the chat session listing:  
-`python chatmgr.py -w 04da77`
+`python chatmgr.py -w 04da77 sortkeys`
 
 View the requests/responses rendered Markdown for a chat session:  
 `python chatmgr.py -w 185d7c -c f040af`
