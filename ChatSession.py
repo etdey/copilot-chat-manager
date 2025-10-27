@@ -7,6 +7,7 @@ Copyright (c) 2025 by Eric Dey. All rights reserved.
 
 from __future__ import annotations  # for forward references in type hints
 
+import datetime
 import hashlib
 import json
 import logging
@@ -32,8 +33,8 @@ class Chat:
         """initialize the chat session from a dictionary or JSON string"""
 
         self.id: str = id   # None value is handled later
-        self.lastUpdate: float = lastUpdate
-        self.createDate: float = lastUpdate  # always same as lastUpdate
+        self.lastUpdate: float = lastUpdate  # defaults to file's last modified time
+        self.createDate: float = lastUpdate
         self.requests: list[Request] = []
         self.size: int = 0  # total size of all requests + responses
 
@@ -53,6 +54,20 @@ class Chat:
             hasher = hashlib.md5()  # this isn't crypto so cool your jets
             hasher.update(json.dumps(sessionDict, sort_keys=True).encode('utf-8'))
             self.id = hasher.hexdigest()
+
+        # attempt to parse creation and last update timestamps from sessionDict
+        if 'creationDate' in sessionDict:
+            try:
+                timestamp = float(sessionDict['creationDate']) / 1000.  # convert ms to s
+                self.createDate = float(timestamp)
+            except (ValueError, TypeError):
+                pass  # leave default value
+        if 'lastMessageDate' in sessionDict:
+            try:
+                timestamp = float(sessionDict['lastMessageDate']) / 1000.  # convert ms to s
+                self.lastUpdate = float(timestamp)
+            except (ValueError, TypeError):
+                pass  # leave default value
 
         for req in sessionDict.get('requests', []):
             try:
