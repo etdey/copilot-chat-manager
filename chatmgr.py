@@ -113,8 +113,8 @@ def print_workspace_summary(workspaces: Workspace.Workspaces) -> None:
     md = '# Available Workspaces\n'
     md += f'**Workspace storage:** {folder_url_format(workspaces.storageDir)}  \n'
     md += f'**Workspaces with chat sessions:** {len(workspaces)}\n\n'
-    md += '| ID | Workspace Folder | Created | Last Updated | Chats |\n'
-    md += '|----|------------------|---------|--------------|-------|\n'
+    md += '| ID | Workspace Folder | Created | Updated | Chats |\n'
+    md += '|----|------------------|---------|---------|-------|\n'
     for w in workspaces:
         md += f'| {elipsis_id(w.id)} | {folder_url_format(w.folder)} | {timestamp_format(w.createDate)} | {timestamp_format(w.lastUpdate)} | {len(w.chats)} |\n'
     markdown_output(md, printText=True)
@@ -170,10 +170,10 @@ def mode_workspace(options: argparse.Namespace) -> None:
     md += f'**Created:** {timestamp_format(selected_workspace.createDate)}  \n'
     md += f'**Last Updated:** {timestamp_format(selected_workspace.lastUpdate)}  \n'
     md += f'**Chat Sessions:** {len(selected_workspace.chats)}\n\n'
-    md += '| Chat ID | Created | Requests | Size |\n'
-    md += '|---------|---------|----------|------|\n'
+    md += '| Chat ID | Created | Updated | Requests | Size |\n'
+    md += '|---------|---------|---------|----------|------|\n'
     for chat in selected_workspace.chats:
-        md += f'| {elipsis_id(chat.id or "")} | {timestamp_format(chat.createDate)} | {len(chat)} | {chat.size} |\n'
+        md += f'| {elipsis_id(chat.id or "")} | {timestamp_format(chat.createDate)} | {timestamp_format(chat.lastUpdate)} | {len(chat)} | {chat.size} |\n'
     markdown_output(md, printText=printMarkdown)
 
 
@@ -234,7 +234,7 @@ def mode_chat(options: argparse.Namespace) -> None:
     for i, (req, resp, _) in enumerate(selected_chat):
         title = f"## Request {i+1}\n"
         markdown_output(title + req + '\n', **output_kwargs, sanitize=sanitizeText)
-        title = f"## Copilot Response {i+1}:\n"
+        title = f"### Response:\n"
         markdown_output(title + resp + '\n', **output_kwargs, sanitize=sanitizeText)
         markdown_output('\n---\n', **output_kwargs)
 
