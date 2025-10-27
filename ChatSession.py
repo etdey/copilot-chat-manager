@@ -25,15 +25,15 @@ class Chat:
     @staticmethod
     def sorting_attributes() -> list[str]:
         """returns a list of valid attribute names for Chat"""
-        return ['id', 'createDate', 'lastUpdate']
+        return ['id', 'created', 'updated']
 
 
     def __init__(self, sessionInput: dict | str, id: str = '', lastUpdate: float = 0.0, workspaceId: str = '<empty>') -> None:
         """initialize the chat session from a dictionary or JSON string"""
 
         self.id: str = id   # None value is handled later
-        self.lastUpdate: float = lastUpdate  # defaults to file's last modified time
-        self.createDate: float = lastUpdate
+        self.updated: float = lastUpdate  # defaults to file's last modified time
+        self.created: float = lastUpdate
         self.requests: list[Request] = []
         self.size: int = 0  # total size of all requests + responses
 
@@ -58,13 +58,13 @@ class Chat:
         if 'creationDate' in sessionDict:
             try:
                 timestamp = float(sessionDict['creationDate']) / 1000.  # convert ms to s
-                self.createDate = float(timestamp)
+                self.created = float(timestamp)
             except (ValueError, TypeError):
                 pass  # leave default value
         if 'lastMessageDate' in sessionDict:
             try:
                 timestamp = float(sessionDict['lastMessageDate']) / 1000.  # convert ms to s
-                self.lastUpdate = float(timestamp)
+                self.updated = float(timestamp)
             except (ValueError, TypeError):
                 pass  # leave default value
 

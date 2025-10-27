@@ -30,8 +30,8 @@ class ChatSessionTests(unittest.TestCase):
         """Test Chat initializes with dict input"""
         chat = Chat(self.minimal_session_dict, lastUpdate=123.45)
         self.assertIsInstance(chat, Chat)
-        self.assertEqual(chat.createDate, 123.45)
-        self.assertEqual(chat.lastUpdate, 123.45)
+        self.assertEqual(chat.created, 123.45)
+        self.assertEqual(chat.updated, 123.45)
         self.assertIsInstance(chat.requests, list)
         self.assertGreaterEqual(chat.size, 0)
 
@@ -39,8 +39,8 @@ class ChatSessionTests(unittest.TestCase):
         """Test Chat initializes with JSON string input"""
         chat = Chat(self.minimal_session_str, lastUpdate=42.0)
         self.assertIsInstance(chat, Chat)
-        self.assertEqual(chat.createDate, 42.0)
-        self.assertEqual(chat.lastUpdate, 42.0)
+        self.assertEqual(chat.created, 42.0)
+        self.assertEqual(chat.updated, 42.0)
 
     def test_init_with_invalid_type(self):
         """Test that invalid input type raises an exception"""

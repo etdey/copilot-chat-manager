@@ -103,7 +103,7 @@ class Workspace:
     @staticmethod
     def sorting_attributes() -> list[str]:
         """returns a list of valid sorting attribute names for Workspace"""
-        return ['id', 'createDate', 'lastUpdate', 'folder']
+        return ['id', 'created', 'updated', 'folder']
 
 
     def __init__(self, storageDir: str, sortBy: str = '') -> None:
@@ -120,8 +120,8 @@ class Workspace:
 
         self._sortAttribute = sortBy  # chats sorting attribute name
         self._sortReverse = False  # sort descending if attribute name starts with '-'
-        self.createDate = os.path.getctime(storageDir)
-        self.lastUpdate = self.createDate  # default until we find chat sessions
+        self.created = os.path.getctime(storageDir)
+        self.updated = self.created  # default until we find chat sessions
         self.chats: list[Chat] = []  # chat objects
         self.folder = ''  # project directory this workspace is associated with
         self.id = os.path.basename(self.storageDir)  # id is the storageDir name
@@ -143,10 +143,10 @@ class Workspace:
 
         if not os.path.exists(self.chatSessionsFolder):
             Log.error(f"chatSessionsFolder does not exist: {self.chatSessionsFolder}")
-            self.lastUpdate = self.createDate
+            self.updated = self.created
             return
 
-        self.lastUpdate = self.createDate  # default until we find chat sessions
+        self.updated = self.created  # default until we find chat sessions
 
         # scan directory for chat session files
         sessionFiles = [f for f in os.listdir(self.chatSessionsFolder) if os.path.isfile(os.path.join(self.chatSessionsFolder, f))]
@@ -154,7 +154,7 @@ class Workspace:
             return  # stop since no chat sessions files found
 
         file_dates = [(f, os.path.getctime(os.path.join(self.chatSessionsFolder, f))) for f in sessionFiles]
-        self.lastUpdate = max(file_dates, key=lambda x: x[1])[1]
+        self.updated = max(file_dates, key=lambda x: x[1])[1]
 
         # load chat sessions
         self.chats = []

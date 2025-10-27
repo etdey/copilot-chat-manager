@@ -116,7 +116,7 @@ def print_workspace_summary(workspaces: Workspace.Workspaces) -> None:
     md += '| ID | Workspace Folder | Created | Updated | Chats |\n'
     md += '|----|------------------|---------|---------|-------|\n'
     for w in workspaces:
-        md += f'| {elipsis_id(w.id)} | {folder_url_format(w.folder)} | {timestamp_format(w.createDate)} | {timestamp_format(w.lastUpdate)} | {len(w.chats)} |\n'
+        md += f'| {elipsis_id(w.id)} | {folder_url_format(w.folder)} | {timestamp_format(w.created)} | {timestamp_format(w.updated)} | {len(w.chats)} |\n'
     markdown_output(md, printText=True)
 
 
@@ -167,13 +167,13 @@ def mode_workspace(options: argparse.Namespace) -> None:
     md = '# Workspace Details\n'
     md += f'**Workspace ID:** {selected_workspace.id}  \n'
     md += f'**Workspace Folder:** {folder_url_format(selected_workspace.folder or "")}  \n'
-    md += f'**Created:** {timestamp_format(selected_workspace.createDate)}  \n'
-    md += f'**Last Updated:** {timestamp_format(selected_workspace.lastUpdate)}  \n'
+    md += f'**Created:** {timestamp_format(selected_workspace.created)}  \n'
+    md += f'**Last Updated:** {timestamp_format(selected_workspace.updated)}  \n'
     md += f'**Chat Sessions:** {len(selected_workspace.chats)}\n\n'
     md += '| Chat ID | Created | Updated | Requests | Size |\n'
     md += '|---------|---------|---------|----------|------|\n'
     for chat in selected_workspace.chats:
-        md += f'| {elipsis_id(chat.id or "")} | {timestamp_format(chat.createDate)} | {timestamp_format(chat.lastUpdate)} | {len(chat)} | {chat.size} |\n'
+        md += f'| {elipsis_id(chat.id or "")} | {timestamp_format(chat.created)} | {timestamp_format(chat.updated)} | {len(chat)} | {chat.size} |\n'
     markdown_output(md, printText=printMarkdown)
 
 
@@ -199,15 +199,15 @@ def mode_chat(options: argparse.Namespace) -> None:
     md = ''  # markdown output string
 
     if options.obsidian:
-        md += Obsidian.new_note_frontmatter(selected_chat.createDate,
-                                            selected_chat.lastUpdate,
+        md += Obsidian.new_note_frontmatter(selected_chat.created,
+                                            selected_chat.updated,
                                             tags=['CopilotAI'])
 
     md += '# Chat Session Details\n'
     md += f'**Workspace ID:** {selected_workspace.id}  \n'
     md += f'**Chat ID:** {selected_chat.id}  \n'
-    md += f'**Created:** {timestamp_format(selected_chat.createDate)}  \n'
-    md += f'**Updated:** {timestamp_format(selected_chat.lastUpdate)}  \n'
+    md += f'**Created:** {timestamp_format(selected_chat.created)}  \n'
+    md += f'**Updated:** {timestamp_format(selected_chat.updated)}  \n'
     md += f'**Size (chars):** {selected_chat.size}  \n'
     md += f'**Requests:** {len(selected_chat)}\n\n'
     markdown_output(md, **output_kwargs)
