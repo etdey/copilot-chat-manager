@@ -33,6 +33,7 @@ Defaults = {
     'workspaceDirRelWindows': os.path.join('AppData', 'Roaming', 'Code', 'User', 'workspaceStorage'),
     'workspaceDirRelMac': os.path.join('Library', 'Application Support', 'Code', 'User', 'workspaceStorage'),
     'workspaceDirRelLinux': os.path.join('.config', 'Code', 'User', 'workspaceStorage'),
+    'workspaceDirEnvVar': 'COPILOT_WORKSPACE_DIR',
     'sanitizeMarkdown': True,
 }
 
@@ -206,11 +207,13 @@ def mode_chat(options: argparse.Namespace) -> None:
     md += '# Chat Session Details\n'
     md += f'**Workspace ID:** {selected_workspace.id}  \n'
     md += f'**Chat ID:** {selected_chat.id}  \n'
+    md += f'**Format:** {selected_chat.format_type.capitalize()} v{selected_chat.format_version}  \n'
     md += f'**Created:** {timestamp_format(selected_chat.created)}  \n'
     md += f'**Updated:** {timestamp_format(selected_chat.updated)}  \n'
     md += f'**Size (chars):** {selected_chat.size}  \n'
-    md += f'**Requests:** {len(selected_chat)}\n\n'
+    md += f'**Requests:** {len(selected_chat)}\n'
     markdown_output(md, **output_kwargs)
+    markdown_output('&nbsp;', **output_kwargs)
 
     if options.raw:
         for i, r in enumerate(selected_chat.requests):
@@ -234,6 +237,7 @@ def mode_chat(options: argparse.Namespace) -> None:
     for i, (req, resp, _) in enumerate(selected_chat):
         title = f"## Request {i+1}\n"
         markdown_output(title + req + '\n', **output_kwargs, sanitize=sanitizeText)
+        markdown_output('&nbsp;', **output_kwargs, sanitize=sanitizeText)
         title = f"### Response:\n"
         markdown_output(title + resp + '\n', **output_kwargs, sanitize=sanitizeText)
         markdown_output('\n---\n', **output_kwargs)
@@ -253,7 +257,7 @@ def main(argv: list[str]) -> int:
 
     description = 'GitHub Copilot chat manager tool.'
 
-    epilog = f'If no workspace is specified, the default is: {def_workspace or "No default for this OS"}\n'
+    epilog = f'Workspace storage directory precedence: --storage argument, {Defaults["workspaceDirEnvVar"]} environment variable, OS default ({def_workspace or "<none for this OS>"})\n'
     epilog += Obsidian.argparse_epilog()
 
     parser = argparse.ArgumentParser(
@@ -311,9 +315,10 @@ def main(argv: list[str]) -> int:
         parser.print_help()
         return 0
 
-    # use default workspace directory if none specified
+    # workspace directory precedence: CLI arg, env var, OS default
     if not options.workspaceStorageDir:
-        options.workspaceStorageDir = def_workspace
+        options.workspaceStorageDir = os.environ.get(Defaults["workspaceDirEnvVar"],
+                                                     def_workspace)
 
     # validate workspace directory
     if not options.workspaceStorageDir:
