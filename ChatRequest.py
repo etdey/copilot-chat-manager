@@ -9,6 +9,7 @@ from __future__ import annotations  # for forward references in type hints
 
 import json
 import logging
+import os
 from pprint import pformat
 
 
@@ -28,6 +29,8 @@ SKIPPED_RESPONSE_KINDS = [
     'progressMessage',
     'progressTaskSerialized',
     'markdownVuln',
+    'mcpServersStarting',
+    'thinking',
     'toolInvocationSerialized',
     'undoStop',
 ]
@@ -123,13 +126,40 @@ class Request:
 
             # inline references to files or method names; inline quote it
             elif resp.get('kind', '') == 'inlineReference':
-                ref = '**unknown reference**'
-                ref = resp['inlineReference']['fsPath'] if 'fsPath' in resp['inlineReference'] else ref
-                ref = resp['inlineReference']['name'] if 'name' in resp['inlineReference'] else ref
+                inline = resp.get('inlineReference', {})
 
-                responseValue += f"{MD_INLINE_QUOTE_BOOKEND}{ref}{MD_INLINE_QUOTE_BOOKEND}"
-                if ref == '**unknown reference**':
-                    responseValue += f"\n{MD_BLOCK_QUOTE_BOOKEND}{pformat(resp['inlineReference'])}{MD_BLOCK_QUOTE_BOOKEND}\n"
+                # Two formats exist:
+                #   New (.jsonl): { "name": "symbol", "location": { "uri": { "fsPath": ... }, "range": {...} } }
+                #   Old (.json):  { "fsPath": "...", "path": "...", "scheme": "file" }  (URI object directly)
+                #   Empty:        {}  (unresolved reference — VS Code never populated it)
+                name = inline.get('name', '')
+                location = inline.get('location', {})
+                new_fs_path = location.get('uri', {}).get('fsPath', '')   # new format
+                old_fs_path = inline.get('fsPath', '')                    # old format: URI obj on inlineReference
+                fs_path = new_fs_path or old_fs_path
+                line_no = location.get('range', {}).get('startLineNumber')  # new format only
+
+                if name:
+                    # New format: use the symbol name; annotate with (filename:line) for
+                    # project files so the reader knows where the symbol lives.
+                    ref = name
+                    _is_project_file = (
+                        fs_path
+                        and line_no is not None
+                        and '/usr/' not in fs_path
+                        and '.vscode/extensions' not in fs_path
+                    )
+                    responseValue += f"{MD_INLINE_QUOTE_BOOKEND}{ref}{MD_INLINE_QUOTE_BOOKEND}"
+                    if _is_project_file:
+                        responseValue += f" ({os.path.basename(fs_path)}:{line_no})"
+                elif fs_path:
+                    # Old format: no symbol name; use the basename as the display label.
+                    # No annotation needed — the label already is the filename.
+                    ref = os.path.basename(fs_path)
+                    responseValue += f"{MD_INLINE_QUOTE_BOOKEND}{ref}{MD_INLINE_QUOTE_BOOKEND}"
+                else:
+                    # Empty / unresolved reference — nothing useful to render; skip silently.
+                    pass
 
             # skip response kinds that aren't useful for reporting
             elif resp.get('kind', '') in SKIPPED_RESPONSE_KINDS:

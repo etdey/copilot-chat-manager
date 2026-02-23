@@ -160,11 +160,9 @@ class Workspace:
         self.chats = []
         for sessionFile in sessionFiles:
             try:
-                with open(os.path.join(self.chatSessionsFolder, sessionFile), 'r', encoding='utf-8') as sf:
-                    chat_id = os.path.splitext(sessionFile)[0]
-                    chat_lastUpdate = os.path.getctime(os.path.join(self.chatSessionsFolder, sessionFile))
-                    chat = Chat(sf.read(), id=chat_id, lastUpdate=chat_lastUpdate, workspaceId=self.id)
-                    self.chats.append(chat)
+                full_path = os.path.join(self.chatSessionsFolder, sessionFile)
+                chat = Chat(full_path, workspaceId=self.id)
+                self.chats.append(chat)
             except Exception as e:
                 Log.warning(f"failed to load chat session from file {sessionFile}: {e}")
 
