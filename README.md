@@ -14,7 +14,7 @@ You must use at least Python 3.7. There may be constructs that require a higher 
 1. Active the virtual environment
 1. Install the required packages
 
-NOTE: Each time you run the tool, you will need to activate the Python virtual environment.
+**NOTE:** Each time you run the tool, you will need to activate the Python virtual environment.
 
 ### Virtual Environment Creation and Setup
 
@@ -32,7 +32,7 @@ source .venv-macos/bin/activate
 pip3 install -r requirements.txt
 ```
 
-NOTE: If you want to do development and testing, substitute the `requirements-dev.txt` file in the above instructions. Thus, `pip install -r requirements-dev.txt` on Windows. 
+**NOTE:** If you want to do development and testing, substitute the `requirements-dev.txt` file in the above instructions. Thus, `pip install -r requirements-dev.txt` on Windows. 
 
 ## Running 
 
@@ -90,7 +90,7 @@ Filtering:
 
 Obsidian vault options:
   --vault-name NAME     name of vault directory (default: None)
-  --vault-basedir DIR   parent directory for vaults (default: C:\Users\{username}\Documents)
+  --vault-basedir DIR   parent directory for vaults
   --vault DIR           full path to vault; overrides --vault-name and --vault-basedir
   --vault-noverify      bypass vault validation checks; only directory must exist
 
@@ -101,8 +101,7 @@ Obsidian note options:
   --note FILE           relpath within vault to note file; overrides --note-folder and --note-title
   --note-overwrite      allow replacement of existing note (default: False)
 
-If no workspace is specified, the default is:
-C:\Users\{username}\AppData\Roaming\Code\User\workspaceStorage
+Workspace storage directory precedence: --storage argument, COPILOT_WORKSPACE_DIR environment variable, OS default
 
 The Obsidian vault can be specified using the --vault option, or by combining --vault-name and
 --vault-basedir. If neither is specified, the default vault parent directory is used (typically
@@ -119,7 +118,7 @@ OBSIDIAN_VAULT_NAME - Name of vault (directory name)
 OBSIDIAN_NOTE_FOLDER - Note's folder within vault (relative to vault root)
 ```
 
-The workspace default directory will change based on your operating system.
+**NOTE:** The workspace default directory will change based on your operating system.
 
 ### Commands
 
@@ -210,12 +209,14 @@ workspaceStorage/
     9d3d359e87669fb4b088d63e3f60f8c6/
         workspace.json
         chatSessions/
-            c7b4ae93-9cbe-49ea-93fa-340a95ade508.json
-            657ed481-a4b7-4594-bd82-725111948fb1.json
-            9903c0b5-4117-4e74-b50f-d3e9b64a87b4.json
+            c7b4ae93-9cbe-49ea-93fa-340a95ade508.jsonl
+            657ed481-a4b7-4594-bd82-725111948fb1.jsonl
+            9903c0b5-4117-4e74-b50f-d3e9b64a87b4.jsonl
             ...
     ...
 ```
+
+**NOTE:** In early 2026, the chat session file format changed. Older _snapshot_ formatted session files are named `*.json` while the newer _eventlog_ formatted files are named `*.jsonl`.
 
 Looked at another way:
 ```
@@ -234,5 +235,4 @@ This is the "Yes, I know about it and intend to fix it," stuff.
 
 - No operating specific build bundles such as with `pyinstaller`; you have to checkout the source and setup a venv to run it.
 - No interactive shell to work within; e.g., `cmd` library.
-- No actual testing on Linux 🐧 but it probably works, right?
 - Markdown styling is the vanilla default that you get from the `rich` package.
